@@ -1,4 +1,8 @@
 import pandas as pd
+import sys
+from io import StringIO
+import importlib
+import streamlit as st
 
 def load_data(file_path):
     """Load data from CSV file or file-like object"""
@@ -8,48 +12,53 @@ def df_head_to_text(df, rows=3):
     """Convert dataframe head to string format"""
     return df.head(rows).to_string()
 
-import re
-import importlib
-
 def execute_code_safely(code, df):
     """Execute generated code in a safe environment with automatic module imports"""
     import streamlit as st
     
-    # Clean up code by removing markdown code block syntax
-    code = code.replace('```python', '').replace('```', '')
-    code = code.strip()
+    # Clean up code
+    code = code.replace('```python', '').replace('```', '').strip()
     
-    # Initialize execution environment
-    exec_globals = {'pd': pd, 'df': df, 'st': st}
-    
-    # Define safe modules that can be automatically imported
-    SAFE_MODULES = {
-        'numpy': 'np',
-        'matplotlib.pyplot': 'plt',
-        'seaborn': 'sns',
-        'scipy': 'scipy',
-        'sklearn': 'sklearn'
+    # Initialize execution environment with necessary imports
+    exec_globals = {
+        'pd': pd, 
+        'df': df,
+        'np': importlib.import_module('numpy'),
+        'plt': importlib.import_module('matplotlib.pyplot'),
+        'sns': importlib.import_module('seaborn'),
+        'print': print  # Explicitly include print function
     }
     
-    # Detect module usage in code
-    for module_name, alias in SAFE_MODULES.items():
-        if alias in code or module_name in code:
-            try:
-                module = importlib.import_module(module_name)
-                exec_globals[alias] = module
-            except ImportError as e:
-                print(f"Warning: Could not import {module_name}: {str(e)}")
+    # Setup output capture
+    output = StringIO()
+    old_stdout = sys.stdout
+    sys.stdout = output
     
     try:
-        # Execute the cleaned code
+        # Execute the code
         exec(code, exec_globals)
         
-        # Handle plot display for Streamlit
-        if 'plt' in exec_globals:
-            st.pyplot(exec_globals['plt'].gcf())
-            exec_globals['plt'].close()
-            
+        # Get the output and reset stdout
+        printed_output = output.getvalue()
+        sys.stdout = old_stdout
+        
+        # Display outputs in Streamlit
+        if printed_output and printed_output.strip():
+            st.subheader("📋 Code Output")
+            st.text(printed_output)
+        
+        # Get and display modified DataFrame
+        modified_df = exec_globals.get('df', df)
+        
+        # Display current DataFrame state
+        st.subheader("📊 Current Data State")
+        st.dataframe(modified_df)
+        
+        return modified_df
+        
     except Exception as e:
+        sys.stdout = old_stdout
         raise Exception(f"Error executing code: {str(e)}")
-    
-    return exec_globals.get('df', df)
+        
+    finally:
+        sys.stdout = old_stdout

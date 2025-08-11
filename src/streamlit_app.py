@@ -1,42 +1,79 @@
 import streamlit as st
 import pandas as pd
-from llm.chain import LLMChainManager
-from utils.data_utils import load_data, df_head_to_text, execute_code_safely
+from src.llm.chain import LLMChainManager
+from src.utils.data_utils import load_data, df_head_to_text, execute_code_safely
 
-st.title("Your Data Analyst 🤖")
+# Page configuration
+st.set_page_config(page_title="Data Analysis Assistant", page_icon="🤖")
+st.title("Interactive Data Analysis Assistant 🤖")
 
+# Initialize session state
+if 'df' not in st.session_state:
+    st.session_state.df = None
+    st.session_state.chat_history = []
+
+# File upload section
 uploaded = st.file_uploader("Upload your CSV dataset", type="csv")
 
 if uploaded:
     try:
-        df = load_data(uploaded)
-        st.subheader("📊 Data Preview")
+        # Load data if new upload
+        if st.session_state.df is None:
+            st.session_state.df = load_data(uploaded)
+            st.session_state.chat_history = []
+            
+        df = st.session_state.df
+        
+        # Display current data preview
+        st.subheader("📊 Current Data Preview")
         st.dataframe(df.head())
 
-        # Add text input for user's analysis request
+        # Display chat history
+        if st.session_state.chat_history:
+            st.subheader("💬 Analysis History")
+            for i, (query, code) in enumerate(st.session_state.chat_history, 1):
+                with st.expander(f"Operation {i}: {query}"):
+                    st.code(code, language='python')
+
+        # User input section
         user_request = st.text_input(
-            "What would you like to analyze in this dataset?",
-            placeholder="e.g., Show the correlation between columns, Create a scatter plot, etc."
+            "What analysis would you like to perform?",
+            placeholder="e.g., 'drop the target column', 'show correlation matrix', etc."
         )
 
-        if st.button("🔍 Ask Gemini to Analyze") and user_request:  # Only proceed if there's a request
-            chain = LLMChainManager.get_chain()
-            data_preview = df_head_to_text(df)
-            
-            response = chain.run({
-                "data_preview": data_preview,
-                "user_request": user_request  # Use the user's input instead of hardcoded request
-            })
+        # Process request
+        if st.button("🔍 Generate Analysis") and user_request:
+            with st.spinner("Generating analysis..."):
+                try:
+                    # Get LLM response
+                    chain = LLMChainManager.get_chain()
+                    data_preview = df_head_to_text(df)
+                    response = chain.run({
+                        "data_preview": data_preview,
+                        "user_request": user_request
+                    })
 
-            st.subheader("💬 Gemini's Suggested Code")
-            st.code(response, language='python')
+                    # Update history
+                    st.session_state.chat_history.append((user_request, response))
 
-            try:
-                df = execute_code_safely(response, df)
-            except Exception as e:
-                st.error("Code Execution Error")
-                st.exception(e)
+                    # Show generated code
+                    st.subheader("💻 Generated Code")
+                    st.code(response, language='python')
+
+                    # Execute code
+                    st.session_state.df = execute_code_safely(response, df)
+
+                except Exception as e:
+                    st.error("❌ Error")
+                    st.exception(e)
                 
     except Exception as e:
-        st.error("Data Loading Error")
+        st.error("❌ Data Loading Error")
         st.exception(e)
+
+# Reset session button
+if st.session_state.df is not None:
+    if st.button("🔄 Reset Session"):
+        st.session_state.df = None
+        st.session_state.chat_history = []
+        st.experimental_rerun()
