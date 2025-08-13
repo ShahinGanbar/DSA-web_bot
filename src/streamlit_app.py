@@ -76,7 +76,7 @@ def main():
     initialize_session_state()
 
     # File upload section
-    uploaded = st.file_uploader("Upload your CSV dataset", type="csv")
+    uploaded = st.file_uploader("Upload your dataset", type=['csv', 'xlsx', 'xls', 'json', 'parquet', 'pickle', 'feather', 'h5', 'hdf5'])
 
     if uploaded:
         try:
@@ -85,13 +85,7 @@ def main():
                 st.session_state.df = load_data(uploaded)
                 st.session_state.chat_history = []
                 st.session_state.file_path = uploaded.name  # Store file path in session state
-                # Persist uploaded file to disk so generated code can read by filename if needed
-                try:
-                    uploaded.seek(0)
-                    with open(uploaded.name, "wb") as f:
-                        f.write(uploaded.getbuffer())
-                except Exception:
-                    pass
+                # No file saving - everything stays in memory
             
             df = st.session_state.df
             

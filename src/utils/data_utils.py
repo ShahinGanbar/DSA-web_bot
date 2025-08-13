@@ -10,8 +10,41 @@ from pydantic import BaseModel
 
 
 def load_data(file_path: Union[str, Any]) -> pd.DataFrame:
-    """Load data from CSV file or file-like object"""
-    return pd.read_csv(file_path)
+    """Load data from various file formats (CSV, Excel, JSON, etc.)"""
+    try:
+        # Handle file-like objects (Streamlit uploads)
+        if hasattr(file_path, 'name'):
+            file_extension = file_path.name.lower().split('.')[-1]
+        else:
+            # Handle string paths
+            file_extension = str(file_path).lower().split('.')[-1]
+        
+        # Load based on file extension
+        if file_extension == 'csv':
+            return pd.read_csv(file_path)
+        elif file_extension in ['xlsx', 'xls']:
+            return pd.read_excel(file_path)
+        elif file_extension == 'json':
+            return pd.read_json(file_path)
+        elif file_extension == 'parquet':
+            return pd.read_parquet(file_path)
+        elif file_extension == 'pickle':
+            return pd.read_pickle(file_path)
+        elif file_extension == 'feather':
+            return pd.read_feather(file_path)
+        elif file_extension == 'h5' or file_extension == 'hdf5':
+            return pd.read_hdf(file_path)
+        else:
+            # Try to infer format
+            try:
+                return pd.read_csv(file_path)
+            except Exception:
+                try:
+                    return pd.read_excel(file_path)
+                except Exception:
+                    raise ValueError(f"Unsupported file format: {file_extension}. Supported formats: CSV, Excel (xlsx/xls), JSON, Parquet, Pickle, Feather, HDF5")
+    except Exception as e:
+        raise Exception(f"Error loading file: {str(e)}")
 
 
 def df_head_to_text(df: pd.DataFrame, rows: int = 3) -> str:
@@ -50,8 +83,7 @@ def execute_code_safely(response: BaseModel, df: pd.DataFrame) -> pd.DataFrame:
             'pd': pd,
             'df': df,
             'print': print,
-            'importlib': importlib,
-            'file_path': getattr(st.session_state, 'file_path', None)
+            'importlib': importlib
         }
         
         # Handle imports with auto-installation
@@ -77,6 +109,14 @@ def execute_code_safely(response: BaseModel, df: pd.DataFrame) -> pd.DataFrame:
                 
                 # Remove import lines from main code
                 code = '\n'.join(line for line in code.split('\n') if 'import' not in line)
+
+        # Prevent external windows/tabs by stripping explicit show() calls (e.g., fig.show(), plt.show())
+        # and Plotly offline calls that auto-open a browser tab
+        # This keeps all plots rendered via Streamlit components only
+        code = re.sub(r'(?m)^\s*.*\.show\s*\([^)]*\)\s*;?\s*$', '', code)
+        code = re.sub(r'(?m)^\s*plotly\.(?:offline|io)\.(?:plot|show)\s*\([^)]*\)\s*;?\s*$', '', code)
+        code = re.sub(r'(?m)^\s*pio\.show\s*\([^)]*\)\s*;?\s*$', '', code)
+        code = re.sub(r'(?m)^\s*.*write_html\s*\([^)]*auto_open\s*=\s*True[^)]*\)\s*;?\s*$', '', code)
         
         # Setup output capture
         output = StringIO()
@@ -95,35 +135,67 @@ def execute_code_safely(response: BaseModel, df: pd.DataFrame) -> pd.DataFrame:
                 st.subheader("📋 Code Output")
                 st.text(printed_output)
 
-            # Try to render plots if any were created
-            plotted = False
-            # Plotly figures
-            fig = exec_globals.get('fig')
-            if fig is not None and hasattr(fig, 'to_plotly_json'):
+            # Try to render plots (all of them) if any were created
+            displayed_any_plot = False
+            plotly_figs = []
+
+            # Collect Plotly figures present in the global namespace
+            for value in list(exec_globals.values()):
                 try:
-                    st.subheader("📈 Plot")
-                    st.plotly_chart(fig, use_container_width=True)
-                    plotted = True
+                    if hasattr(value, 'to_plotly_json'):
+                        plotly_figs.append(value)
+                    elif isinstance(value, (list, tuple)):
+                        for item in value:
+                            if hasattr(item, 'to_plotly_json'):
+                                plotly_figs.append(item)
                 except Exception:
                     pass
-            # Matplotlib/seaborn figures
+
+            # Deduplicate while preserving order
+            seen_ids = set()
+            unique_plotly_figs = []
+            for f in plotly_figs:
+                if id(f) not in seen_ids:
+                    unique_plotly_figs.append(f)
+                    seen_ids.add(id(f))
+
+            if unique_plotly_figs:
+                st.subheader("📈 Plots")
+                for f in unique_plotly_figs:
+                    try:
+                        st.plotly_chart(f, use_container_width=True)
+                        displayed_any_plot = True
+                    except Exception:
+                        pass
+
+            # Matplotlib/seaborn figures (render all open figures)
             plt = exec_globals.get('plt')
-            if not plotted and plt is not None:
+            if plt is not None:
                 try:
-                    st.subheader("📈 Plot")
-                    st.pyplot(plt.gcf(), clear_figure=True)
-                    plotted = True
+                    fig_nums = plt.get_fignums()
                 except Exception:
-                    pass
-            # Matplotlib via axes handle
-            if not plotted and 'ax' in exec_globals:
+                    fig_nums = []
+                if fig_nums:
+                    if not displayed_any_plot:
+                        st.subheader("📈 Plots")
+                    for num in fig_nums:
+                        try:
+                            fig_obj = plt.figure(num)
+                            st.pyplot(fig_obj, clear_figure=False)
+                            displayed_any_plot = True
+                        except Exception:
+                            pass
+
+            # Matplotlib via axes handle (if any)
+            if 'ax' in exec_globals:
                 ax = exec_globals.get('ax')
                 try:
                     fig_obj = getattr(ax, 'figure', None)
                     if fig_obj is not None:
-                        st.subheader("📈 Plot")
-                        st.pyplot(fig_obj, clear_figure=True)
-                        plotted = True
+                        if not displayed_any_plot:
+                            st.subheader("📈 Plots")
+                        st.pyplot(fig_obj, clear_figure=False)
+                        displayed_any_plot = True
                 except Exception:
                     pass
             

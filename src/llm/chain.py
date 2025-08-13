@@ -43,12 +43,13 @@ class LLMChainManager:
 
             Code policy when generating code:
             - The DataFrame is already loaded as variable 'df' - DO NOT recreate it with pd.DataFrame() or pd.read_csv().
-            - Do not read or write any files. Never call pd.read_csv, open(), Path(), to_csv(), or perform filesystem/network I/O.
+            - ABSOLUTELY NO FILE OPERATIONS: Never call pd.read_csv(), open(), Path(), to_csv(), savefig(), write_html(), or any filesystem/network I/O.
             - Keep the code concise, safe, and assign final results back to df if you modify the dataset.
-            - For plots: create a Plotly figure in variable 'fig' or use matplotlib/seaborn so it auto-renders.
-            - DO NOT call fig.show() or plt.show() - Streamlit handles rendering automatically.
+            - For plots: create Plotly figures assigned to variables (e.g., fig, figs list) or use matplotlib/seaborn so Streamlit can render them.
+            - DO NOT call fig.show(), plt.show(), plotly.offline.plot(), plotly.io.show(), pio.show(), or anything that opens a new tab/window.
             - For correlation/statistics: use df.select_dtypes(include='number') if you need numeric-only operations.
             - Always work with the existing 'df' variable, never create a new one.
+            - All data must come from the in-memory 'df' variable.
 
             {format_instructions}
             """,
