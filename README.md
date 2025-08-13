@@ -15,7 +15,7 @@ A Streamlit-based web application that provides an intelligent data analysis ass
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.10
 - Google Gemini API key
 
 ### Installation
