@@ -128,7 +128,6 @@ Web-bot/
 
 ## 🚧 Limitations
 
-- Currently supports CSV files only
 - Requires internet connection for LLM API calls
 - Generated code runs in the same process as the web app
 - Large datasets may impact performance
@@ -152,14 +151,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [LangChain](https://langchain.com/) for LLM orchestration
 - [Pandas](https://pandas.pydata.org/) for data manipulation
 - [Plotly](https://plotly.com/) and [Matplotlib](https://matplotlib.org/) for visualizations
-
-## 📞 Support
-
-If you encounter any issues or have questions:
-1. Check the [Issues](https://github.com/yourusername/Web-bot/issues) page
-2. Create a new issue with detailed information
-3. Include error messages and steps to reproduce
-
----
 
 **Happy Data Analysis! 🎉**
