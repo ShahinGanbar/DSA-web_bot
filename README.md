@@ -22,7 +22,7 @@ A Streamlit-based web application that provides an intelligent data analysis ass
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/ShahinGanbar/DSA-web_bot.git
    cd Web-bot
    ```
 
