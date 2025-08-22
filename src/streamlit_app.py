@@ -13,6 +13,7 @@ def initialize_session_state():
         st.session_state.df = None
         st.session_state.chat_history = []
         st.session_state.file_path = None
+        st.session_state.execution_history = []
 
 
 def reset_session():
@@ -20,6 +21,7 @@ def reset_session():
     st.session_state.df = None
     st.session_state.chat_history = []
     st.session_state.file_path = None
+    st.session_state.execution_history = []
     st.experimental_rerun()
 
 
@@ -58,11 +60,16 @@ def process_user_request(user_request: str, df: pd.DataFrame):
     # Lazy import to avoid circular
     from utils.data_utils import df_schema_to_text
     data_schema = df_schema_to_text(df)
+    
+    # Format conversation history for LLM context
+    conversation_history = LLMChainManager.format_conversation_history(st.session_state.chat_history)
+    
     raw = chain.run({
         "data_preview": data_preview,
         "user_request": user_request,
         "file_path": st.session_state.file_path,
         "data_schema": data_schema,
+        "conversation_history": conversation_history,
     })
     return _parse_llm_response(raw)
 
@@ -93,6 +100,19 @@ def main():
             st.subheader("📊 Current Data Preview")
             st.write(f"File: {st.session_state.file_path}")
             st.dataframe(df.head())
+            
+            # Display execution history
+            if st.session_state.execution_history:
+                st.subheader("🔧 Previous Operations")
+                for i, result in enumerate(st.session_state.execution_history, 1):
+                    with st.expander(f"Operation {i}: {result['code'][:50]}..."):
+                        st.write(f"**Code:** {result['code']}")
+                        if result['output']:
+                            st.write(f"**Output:** {result['output']}")
+                        if result['data_changes']:
+                            st.write(f"**Data Changes:** {result['data_changes']}")
+                        if result['plots_created'] > 0:
+                            st.write(f"**Plots Created:** {result['plots_created']}")
 
             # Display chat history
             if st.session_state.chat_history:
@@ -128,8 +148,13 @@ def main():
                         if response.response_type == "code":
                             st.subheader("💻 Generated Code")
                             st.code(response.content, language='python')
-                            # Execute code
-                            st.session_state.df = execute_code_safely(response, df)
+                            # Execute code and get results
+                            modified_df, execution_results = execute_code_safely(response, df)
+                            st.session_state.df = modified_df
+                            
+                            # Store execution results for LLM context
+                            if execution_results:
+                                st.session_state.execution_history.append(execution_results)
                         else:
                             # Display explanation
                             st.subheader("💡 Answer")

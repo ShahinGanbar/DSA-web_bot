@@ -61,7 +61,7 @@ def df_schema_to_text(df: pd.DataFrame) -> str:
     return "\n".join(lines)
 
 
-def execute_code_safely(response: BaseModel, df: pd.DataFrame) -> pd.DataFrame:
+def execute_code_safely(response: BaseModel, df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     """
     Execute generated code or display explanation based on response type with auto-package installation
     Args:
@@ -73,10 +73,12 @@ def execute_code_safely(response: BaseModel, df: pd.DataFrame) -> pd.DataFrame:
     if response.response_type == "explanation":
         st.subheader("💡 Answer")
         st.write(response.content)
-        return df
+        return df, {}
 
     if response.response_type == "code":
         code = response.content.replace('```python', '').replace('```', '').strip()
+        
+
         
         # Initialize execution environment
         exec_globals = {
@@ -138,6 +140,7 @@ def execute_code_safely(response: BaseModel, df: pd.DataFrame) -> pd.DataFrame:
             # Try to render plots (all of them) if any were created
             displayed_any_plot = False
             plotly_figs = []
+            fig_nums = []  # Initialize matplotlib figure numbers
 
             # Collect Plotly figures present in the global namespace
             for value in list(exec_globals.values()):
@@ -204,8 +207,49 @@ def execute_code_safely(response: BaseModel, df: pd.DataFrame) -> pd.DataFrame:
             st.subheader("📊 Current Data State")
             st.dataframe(modified_df)
             
-            return modified_df
+            # Prepare execution results for LLM context (not for response mixing)
+            # Ensure all variables are defined before using them
+            plots_created = len(unique_plotly_figs) + len(fig_nums) + (1 if 'ax' in exec_globals else 0)
             
+            # Enhanced data change detection
+            data_changes = []
+            if df.shape != modified_df.shape:
+                data_changes.append(f"Shape changed from {df.shape} to {modified_df.shape}")
+            
+            # Check for column changes
+            original_cols = set(df.columns)
+            new_cols = set(modified_df.columns)
+            if original_cols != new_cols:
+                added = new_cols - original_cols
+                removed = original_cols - new_cols
+                if added:
+                    data_changes.append(f"Added columns: {list(added)}")
+                if removed:
+                    data_changes.append(f"Removed columns: {list(removed)}")
+            
+            # Check for data type changes
+            type_changes = []
+            for col in df.columns.intersection(modified_df.columns):
+                if df[col].dtype != modified_df[col].dtype:
+                    type_changes.append(f"{col}: {df[col].dtype} → {modified_df[col].dtype}")
+            
+            if type_changes:
+                data_changes.append(f"Type changes: {', '.join(type_changes)}")
+            
+            # Check for filtering/row changes
+            if len(df) != len(modified_df):
+                data_changes.append(f"Row count changed from {len(df)} to {len(modified_df)}")
+            
+            execution_results = {
+                'code': code,
+                'output': printed_output.strip(),
+                'data_changes': '; '.join(data_changes) if data_changes else "No structural changes detected",
+                'plots_created': plots_created
+            }
+            
+            return modified_df, execution_results
+            
+
         except Exception as e:
             sys.stdout = old_stdout
             raise Exception(f"Error executing code: {str(e)}")
@@ -213,4 +257,4 @@ def execute_code_safely(response: BaseModel, df: pd.DataFrame) -> pd.DataFrame:
         finally:
             sys.stdout = old_stdout
     
-    return df
+    return df, {}
