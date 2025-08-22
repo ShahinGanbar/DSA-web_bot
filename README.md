@@ -45,7 +45,7 @@ pip install -r requirements.txt
 Create a .env file:
 
 GOOGLE_API_KEY=your_gemini_api_key_here
-OPENAI_API_KEY=your_openai_api_key_here   # optional
+OPENAI_API_KEY=your_openai_api_key_here   # optional(you can change llm in chain.py)
 
 
 Run the app:
