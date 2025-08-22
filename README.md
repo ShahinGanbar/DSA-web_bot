@@ -16,41 +16,49 @@ A Streamlit-based web application that provides an intelligent data analysis ass
 
 📋 Interactive UI: Clean, modern interface with expandable chat history
 
-🚀 Quick Start (Docker)
-Prerequisites
+## 🚀 Quick Start
 
-Docker & Docker Compose installed
+### Prerequisites
 
-Google Gemini API key
+- Python 3.8+
+- Google Gemini API key
 
-1️⃣ Clone the repository
-git clone <your-repo-url>
-cd Web-bot
+### Installation
 
-2️⃣ Set up environment variables
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd Web-bot
+   ```
 
-Create a .env file in the project root:
+2. **Create and activate virtual environment**
+   ```bash
+   python -m venv venv
+   # On Windows
+   venv\Scripts\activate
+   # On macOS/Linux
+   source venv/bin/activate
+   ```
 
-GOOGLE_API_KEY=your_gemini_api_key_here
-OPENAI_API_KEY=your_openai_api_key_here  # if using OpenAI models
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-3️⃣ Build and run with Docker Compose
-docker compose up --build
+4. **Set up environment variables**
+   Create a `.env` file in the project root:
+   ```env
+   GOOGLE_API_KEY=your_gemini_api_key_here
+   ```
 
+5. **Run the application**
+   ```bash
+   streamlit run src/streamlit_app.py
+   ```
 
-The first build may take a few minutes.
+## 📁 Project Structure
 
-Your app will be available at: http://localhost:8501
-
-✅ Streamlit, dependencies, and API keys are all configured inside the container.
-
-4️⃣ Stopping the app
-docker compose down
-
-
-This stops the container and frees port 8501.
-
-📁 Project Structure
+```
 Web-bot/
 ├── src/
 │   ├── streamlit_app.py      # Main Streamlit application
