@@ -21,18 +21,14 @@ class LLMChainManager:
     _chain = None
 
     def __init__(self):
-        if not os.getenv("OPENAI_API_KEY"):
-            raise ValueError("OPENAI_API_KEY not found in environment variables")
+        if not os.getenv("GOOGLE_API_KEY"):
+            raise ValueError("GOOGLE_API_KEY not found in environment variables")
             
-        # llm = GoogleGenerativeAI(
-        #     model="gemini-2.5-flash",
-        #     google_api_key=os.getenv("GOOGLE_API_KEY")
-        # )
-        llm = ChatOpenAI(
-            model_name="gpt-4o-mini",  # <-- choose your OpenAI model
-            temperature=0.7,
-            openai_api_key=os.getenv("OPENAI_API_KEY")  
+        llm = GoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            google_api_key=os.getenv("GOOGLE_API_KEY")
         )
+
 
         parser = PydanticOutputParser(pydantic_object=AnalysisResponse)
 
