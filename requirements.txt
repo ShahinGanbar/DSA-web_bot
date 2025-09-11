@@ -9,7 +9,12 @@ openpyxl
 
 #for code execution after user request:
 
+numpy
+pandas
+scipy
+scikit-learn
 matplotlib
 seaborn
-numpy
+plotly
+
 

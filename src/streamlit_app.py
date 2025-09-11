@@ -76,8 +76,8 @@ def process_user_request(user_request: str, df: pd.DataFrame):
 
 def main():
     # Page configuration
-    st.set_page_config(page_title="Data Analysis Assistant", page_icon="🤖")
-    st.title("Interactive Data Analysis Assistant 🤖")
+    st.set_page_config(page_title="Data Science Academy Assistant", page_icon="🤖")
+    st.title("Data Science Academy Assistant 🤖")
 
     # Initialize session state
     initialize_session_state()
