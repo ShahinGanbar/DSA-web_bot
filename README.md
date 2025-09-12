@@ -1,159 +1,217 @@
-Web-bot: Interactive Data Analysis Assistant 🤖
+# Web-bot: Interactive Data Analysis Assistant
 
-A Streamlit-based web application that provides an intelligent data analysis assistant powered by Google's Gemini (or OpenAI). Upload CSV datasets and get instant insights through natural language queries, automated code generation, and interactive visualizations. Now deployed and scalable on AWS ECS (Fargate).
+A Streamlit-based web application that provides an intelligent data analysis assistant powered by Google's Gemini AI or OpenAI. Upload CSV datasets and get instant insights through natural language queries, automated code generation, and interactive visualizations.
 
-✨ Features
+## Features
 
-📊 Smart Data Analysis – Ask questions in natural language
+* Smart Data Analysis – Ask questions about your data in natural language
+* AI-Powered Code Generation – Automatically generates Pandas/NumPy/Plotly/Matplotlib code  
+* Auto-Rendering Plots – Interactive visualizations with Plotly/Seaborn/Matplotlib
+* Safe Code Execution – Runs generated code in a controlled environment
+* Session Management – Persistent state with AWS DynamoDB (optional)
+* Interactive UI – Clean, modern Streamlit interface
+* AWS Integration – Containerized with Docker, deployed on ECS Fargate with ECR storage
 
-🤖 AI-Powered Code Generation – Generates Pandas/NumPy/Plotly/Matplotlib code
+## Quick Start
 
-📈 Auto-Rendering Plots – Interactive visualizations with Plotly/Seaborn/Matplotlib
+### Docker Deployment (Recommended)
 
-🔒 Safe Code Execution – Runs code in a controlled environment
+**Prerequisites:**
+* Docker & Docker Compose installed
+* API key (Google Gemini)
 
-💾 Session Management – Persistent state with AWS DynamoDB (optional)
+**Steps:**
 
-📋 Interactive UI – Clean, modern Streamlit interface
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ShahinGanbar/Web-bot.git
+   cd Web-bot
+   ```
 
-🚀 AWS Integration – Containerized with Docker, deployed on ECS Fargate, image stored in ECR, and secured with IAM roles.
+2. Create environment file:
+   Create a `.env` file in the project root:
+   ```env
+   GOOGLE_API_KEY=your_gemini_api_key_here
+   ```
 
-Quick Start
-Option 1: Run Locally
+3. Build and run:
+   ```bash
+   docker compose up --build
+   ```
 
-Prerequisites:
+4. Access the application:
+   Open your browser and navigate to `http://localhost:8501`
 
-Python 3.10
+### Local Development
 
-Virtual environment (recommended)
+Only needed if you want to modify the code or prefer running without Docker.
 
-API key (Google Gemini or OpenAI)
+**Prerequisites:**
+* Python 3.10 
+* API key (Google Gemini)
 
-Installation:
+**Steps:**
 
-git clone <repo-url>
-cd Web-bot
-python -m venv venv
-# Windows
-venv\Scripts\activate
-# macOS/Linux
-source venv/bin/activate
-pip install -r requirements.txt
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ShahinGanbar/Web-bot.git
+   cd Web-bot
+   ```
 
+2. Create and activate virtual environment:
 
-Create a .env file:
+   **Ubuntu/Linux/macOS:**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
 
-GOOGLE_API_KEY=your_gemini_api_key_here
-OPENAI_API_KEY=your_openai_api_key_here # optional
+   **Windows:**
+   ```bash
+   python -m venv venv
+   venv\Scripts\activate
+   ```
 
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Run the app:
+4. Create environment file:
+   Create a `.env` file in the project root:
+   ```env
+   GOOGLE_API_KEY=your_gemini_api_key_here
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
 
-streamlit run src/streamlit_app.py
+5. Run the application:
+   ```bash
+   streamlit run src/streamlit_app.py
+   ```
 
-Option 2: Run with Docker (Locally or on AWS)
+6. Access the app at `http://localhost:8501`
 
-Prerequisites:
+## Ubuntu Setup
 
-Docker & Docker Compose installed
+### For Docker Deployment
 
-(Optional) AWS CLI configured for ECS/ECR deployment
+1. Update system packages:
+   ```bash
+   sudo apt update && sudo apt upgrade -y
+   ```
 
-Steps:
+2. Install Docker:
+   ```bash
+   sudo apt install docker.io docker-compose -y
+   sudo systemctl start docker
+   sudo systemctl enable docker
+   sudo usermod -aG docker $USER
+   ```
 
-docker compose up --build
+3. Logout and login again (or run `newgrp docker`) to apply group changes
 
+4. Follow the Docker deployment steps above
 
-Access:
+### For Local Development
 
-Local: http://localhost:8501
+If you need to modify the code:
 
-AWS ECS: http://(I'm sorry):8501
+1. Install Python:
+   ```bash
+   sudo apt install python3 python3-pip python3-venv -y
+   ```
 
-AWS Deployment Overview
+2. Follow the local development steps above
 
-ECR: Docker image stored in Amazon Elastic Container Registry.
+## AWS Deployment
 
-ECS (Fargate): Runs the containerized Streamlit app without managing servers.
+### Architecture Components
 
-VPC & Security Groups: Configured to allow inbound traffic on port 8501.
+* **ECR (Elastic Container Registry)** - Stores Docker images securely
+* **ECS (Fargate)** - Runs containerized app without server management
+* **VPC & Security Groups** - Network configuration allowing traffic on port 8501
+* **IAM Roles** - Access control for AWS services
+* **Optional Services:**
+  * S3 - Store and load CSV datasets
+  * DynamoDB - Persistent session management
+  * CloudWatch - Logging and monitoring
+  * Secrets Manager - Secure API key storage
 
-IAM Roles:
+### Deployment Steps
 
-ecsTaskExecutionRole allows ECS to pull images from ECR.
+1. Build and push Docker image to ECR
+2. Create ECS cluster with Fargate launch type
+3. Configure task definition with environment variables
+4. Set up load balancer and security groups
+5. Deploy and monitor through CloudWatch
 
-API keys stored securely via environment variables or AWS Secrets Manager.
+## Project Structure
 
-Optional S3 Integration: Can store and load CSV datasets from Amazon S3 for scalability.
-
-Optional DynamoDB: For persistent session management across multiple ECS tasks.
-
-Monitoring: CloudWatch for logs and metrics.
-
-Project Structure
+```
 Web-bot/
 ├── src/
 │   ├── streamlit_app.py       # Main Streamlit application
 │   ├── llm/
-│   │   └── chain.py           # LLM chain logic and prompts
+│   │   └── chain.py          # LLM chain logic and prompts
 │   └── utils/
-│       └── data_utils.py      # Data utilities and safe execution
-├── requirements.txt           # Python dependencies
-├── .env                       # Environment variables (created by user)
-├── Dockerfile                 # Docker image definition
-├── docker-compose.yml         # Docker Compose configuration
-└── README.md                  # Documentation
+│       └── data_utils.py     # Data utilities and safe execution
+├── requirements.txt          # Python dependencies
+├── .env                      # Environment variables (create this)
+├── Dockerfile               # Docker image definition
+├── docker-compose.yml       # Docker Compose configuration
+├── README.md               # This file
+└── LICENSE                 # MIT License
+```
 
-Usage Examples
+## Usage Examples
 
-“What’s the average value of numeric columns?”
+Try these natural language queries with your uploaded CSV data:
 
-“Filter rows where column X > 100”
+* "What's the average value of all numeric columns?"
+* "Filter rows where sales > 1000 and show the top 10"
+* "Create a correlation matrix heatmap"
+* "Show me a scatter plot of price vs quantity"
+* "Generate a pairplot of all features"
+* "What are the unique values in the category column?"
+* "Create a bar chart showing sales by region"
 
-“Create a correlation matrix heatmap”
+## Safety Features
 
-“Show me a pairplot of the features”
+* No Direct File I/O - Prevents unauthorized file system access
+* Controlled Execution Environment - Code runs in isolated context
+* Auto-Package Installation - Handles missing dependencies safely
+* Error Handling - Clear feedback for execution issues
+* Input Validation - Sanitizes user queries and data uploads
 
-Safety Features
+## Limitations
 
-No direct file I/O
+* Internet connection required for LLM API calls
+* Large datasets (>100MB) may affect performance
+* Generated code complexity depends on query specificity
+* Rate limits apply based on your API provider
 
-Controlled execution environment
+## Contributing
 
-Auto-installation of missing packages
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes and commit: `git commit -m "Add amazing feature"`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-Error handling with clear feedback
+### Development Guidelines
 
-Limitations
+* Add tests for new features
+* Update documentation as needed
+* Ensure Docker builds successfully
 
-Internet connection required for LLM API calls
+## License
 
-Large datasets may affect performance
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-Contributing
+## Acknowledgments
 
-Fork the repository
-
-Create a feature branch (git checkout -b feature/amazing-feature)
-
-Commit (git commit -m "Add amazing feature")
-
-Push (git push origin feature/amazing-feature)
-
-Open a Pull Request
-
-License
-
-MIT License — see the LICENSE file.
-
-Acknowledgments
-
-Streamlit
-
-Google Gemini / OpenAI
-
-LangChain
-
-Pandas, Plotly, Matplotlib
-
-AWS (ECS, ECR, VPC, IAM, CloudWatch)
+* Streamlit - Web app framework
+* Google Gemini / OpenAI - AI language models
+* LangChain - LLM application framework
+* Pandas, Plotly, Matplotlib - Data analysis and visualization
+* AWS - Cloud infrastructure (ECS, ECR, VPC, IAM, CloudWatch)
