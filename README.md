@@ -108,7 +108,13 @@ Only needed if you want to modify the code or prefer running without Docker.
    sudo usermod -aG docker $USER
    ```
 
-3. Logout and login again (or run `newgrp docker`) to apply group changes
+3. Build an image and run the container
+   ```bash
+   git clone https://github.com/ShahinGanbar/Web-bot.git
+   cd Web-bot
+   # Create .env file with your Gemini API key
+   docker compose up --build
+   ```
 
 4. Follow the Docker deployment steps above
 
