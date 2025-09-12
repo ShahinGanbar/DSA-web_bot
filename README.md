@@ -155,18 +155,24 @@ If you need to modify the code:
 
 ```
 Web-bot/
-├── src/
-│   ├── streamlit_app.py       # Main Streamlit application
-│   ├── llm/
-│   │   └── chain.py          # LLM chain logic and prompts
-│   └── utils/
-│       └── data_utils.py     # Data utilities and safe execution
+├── app/
+│   ├── __init__.py
+│   └── main.py
+├── llm/
+│   ├── __init__.py
+│   └── chain.py              # LLM chain logic and prompts
+├── utils/
+│   ├── __init__.py
+│   └── data_utils.py         # Data utilities and safe execution
+├── streamlit_app.py          # Main Streamlit application
 ├── requirements.txt          # Python dependencies
 ├── .env                      # Environment variables (create this)
-├── Dockerfile               # Docker image definition
-├── docker-compose.yml       # Docker Compose configuration
-├── README.md               # This file
-└── LICENSE                 # MIT License
+├── .dockerignore            # Docker ignore file
+├── .gitignore              # Git ignore file
+├── Dockerfile              # Docker image definition
+├── compose.yaml            # Docker Compose configuration
+├── README.md              # This file
+├── README.Docker.md       # Docker-specific documentation
 ```
 
 ## Usage Examples
